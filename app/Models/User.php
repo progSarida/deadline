@@ -21,6 +21,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'is_admin',
     ];
 
     /**
@@ -44,5 +45,12 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function canAccessPanel(\Filament\Panel $panel): bool                            // gestione accessi ai panel
+    {
+        if ($panel->getId() === 'admin') { return $this->is_admin; }                        // solo chi è admin può accedere al relativo panel
+        if ($panel->getId() === 'user') { return true; }                                    // tutti gli utenti possono accedere al panel 'user'
+        return false;
     }
 }
