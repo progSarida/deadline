@@ -4,21 +4,27 @@ namespace App\Models;
 
 use App\Enums\Timespan;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 
 class Deadline extends Model
 {
     protected $fillable = [
-        'contact_type',
-        'client_id',
-        'date',
-        'time',
+        'scope_type_id',
+        'deadline_date',
+        'recurrent',
+        'quantity',
+        'timespan',
+        'description',
+        'met',
+        'met_date',
+        'met_user_id',
         'note',
-        'outcome_type',
-        'user_id',
+        'insert_user_id',
+        'modify_user_id',
     ];
 
     protected $casts = [
-        'contact_type' => Timespan::class,
+        'timespan' => Timespan::class,
     ];
 
     public function scope()
@@ -26,38 +32,60 @@ class Deadline extends Model
         return $this->belongsTo(ScopeType::class);
     }
 
-    public function registrationUser()
+    public function insertUser()
     {
-        return $this->belongsTo(User::class, 'registration_user_id');
+        return $this->belongsTo(User::class, 'insert_user_id');
+    }
+
+    public function modifyUser()
+    {
+        return $this->belongsTo(User::class, 'modify_user_id');
+    }
+
+    public function metUser()
+    {
+        return $this->belongsTo(User::class, 'met_user_id');
+    }
+
+    public function scopeType()
+    {
+        return $this->belongsTo(ScopeType::class, 'scope_type_id');
     }
 
     protected static function booted()
     {
-        static::creating(function ($contact) {
+        static::creating(function ($deadline) {
+            $deadline->insert_user_id = Auth::user()->id;                     // salvo l'id dell'utente che ha inserito la scadenza
+            $deadline->modify_user_id = Auth::user()->id;                           // salvo l'id dell'utente che per ultimo ha modificato la scadenza
+        });
+
+        static::created(function ($deadline) {
             //
         });
 
-        static::created(function ($contact) {
+        static::updating(function ($deadline) {
+            $deadline->modify_user_id = Auth::user()->id;                           // aggiorno l'id dell'utente che per ultimo ha modificato la scadenza
+        });
+
+        static::updated(function ($deadline) {
             //
         });
 
-        static::updating(function ($contact) {
+        static::saving(function ($deadline) {
+            if($deadline->met){                                                     // se la scadenza è segnata rispettata
+                $deadline->met_user_id = Auth::user()->id;                          // salvo l'id dell'utente che ha segnato rispettata la scadenza
+            }
+        });
+
+        static::saved(function ($deadline) {
             //
         });
 
-        static::updated(function ($contact) {
+        static::deleting(function ($deadline) {
             //
         });
 
-        static::saved(function ($contact) {
-            //
-        });
-
-        static::deleting(function ($contact) {
-            //
-        });
-
-        static::deleted(function ($contact) {
+        static::deleted(function ($deadline) {
             //
         });
     }

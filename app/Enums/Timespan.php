@@ -19,7 +19,7 @@ enum Timespan: string implements HasLabel
             self::DAY => 'Giorno/i',
             self::WEEK => 'Settimana/e',
             self::MONTH => 'Mese/i',
-            self::YEAR => 'anno/i',
+            self::YEAR => 'Anno/i',
         };
     }
 }
