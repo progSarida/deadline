@@ -25,6 +25,7 @@ return new class extends Migration
             $table->text('note')->nullable();                                                                                   // note
             $table->foreignId('insert_user_id')->nullable()->constrained('users')->onUpdate('cascade')->onDelete('set null');   // id utente che ha inserito la scadenza
             $table->foreignId('modify_user_id')->nullable()->constrained('users')->onUpdate('cascade')->onDelete('set null');   // id utente che ha modificato scadenza
+            $table->boolean('renew')->default(0);                                                                               // flag per rinnovo scadenza periodica
             $table->timestamps();
         });
     }
