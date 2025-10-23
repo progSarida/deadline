@@ -151,12 +151,11 @@ class DeadlineResource extends Resource
                     ->searchable()
                     ->label('Modificata da')
                     ->toggleable(isToggledHiddenByDefault: true),
-                ToggleColumn::make('met')
+                TextColumn::make('met')
                     ->label('Rispettata')
-                    ->onIcon('heroicon-s-check-circle')
-                    ->offIcon('heroicon-s-x-circle')
-                    ->onColor('success')
-                    ->offColor('danger'),
+                    ->formatStateUsing(function ($state) {
+                        return $state ? 'Sì' : 'No';
+                    }),
                 TextColumn::make('met_date')
                     ->label('Rispettato il')
                     ->date('d/m/Y')

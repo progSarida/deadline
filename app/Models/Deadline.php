@@ -21,10 +21,14 @@ class Deadline extends Model
         'note',
         'insert_user_id',
         'modify_user_id',
+        'renew',
     ];
 
     protected $casts = [
         'timespan' => Timespan::class,
+        'recurrent' => 'boolean',
+        'met' => 'boolean',
+        'renew' => 'boolean',
     ];
 
     public function scope()
@@ -74,6 +78,8 @@ class Deadline extends Model
             $deadline->modify_user_id = Auth::user()->id;                           // salvo l'id dell'utente che per ultimo ha modificato la scadenza
             if($deadline->met){                                                     // se la scadenza è segnata rispettata
                 $deadline->met_user_id = Auth::user()->id;                          // salvo l'id dell'utente che ha segnato rispettata la scadenza
+            } else {
+                $deadline->met_user_id = null;
             }
         });
 
