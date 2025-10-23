@@ -19,6 +19,6 @@ class EditDeadline extends EditRecord
 
     protected function afterSave(): void
     {
-        $this->refreshFormData(['updated_at', 'modify_user_id']);                   // Ricarica i campi specificati
+        $this->refreshFormData(['updated_at', 'modify_user_id']);                   // ricarico i campi specificati
     }
 }
