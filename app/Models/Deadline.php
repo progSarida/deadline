@@ -55,8 +55,7 @@ class Deadline extends Model
     protected static function booted()
     {
         static::creating(function ($deadline) {
-            $deadline->insert_user_id = Auth::user()->id;                     // salvo l'id dell'utente che ha inserito la scadenza
-            $deadline->modify_user_id = Auth::user()->id;                           // salvo l'id dell'utente che per ultimo ha modificato la scadenza
+            $deadline->insert_user_id = Auth::user()->id;                           // salvo l'id dell'utente che ha inserito la scadenza
         });
 
         static::created(function ($deadline) {
@@ -64,7 +63,7 @@ class Deadline extends Model
         });
 
         static::updating(function ($deadline) {
-            $deadline->modify_user_id = Auth::user()->id;                           // aggiorno l'id dell'utente che per ultimo ha modificato la scadenza
+            //
         });
 
         static::updated(function ($deadline) {
@@ -72,6 +71,7 @@ class Deadline extends Model
         });
 
         static::saving(function ($deadline) {
+            $deadline->modify_user_id = Auth::user()->id;                           // salvo l'id dell'utente che per ultimo ha modificato la scadenza
             if($deadline->met){                                                     // se la scadenza è segnata rispettata
                 $deadline->met_user_id = Auth::user()->id;                          // salvo l'id dell'utente che ha segnato rispettata la scadenza
             }

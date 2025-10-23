@@ -16,4 +16,9 @@ class EditDeadline extends EditRecord
             Actions\DeleteAction::make(),
         ];
     }
+
+    protected function afterSave(): void
+    {
+        $this->refreshFormData(['updated_at', 'modify_user_id']);                   // Ricarica i campi specificati
+    }
 }

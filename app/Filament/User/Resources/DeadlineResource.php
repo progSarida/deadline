@@ -23,6 +23,7 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Auth;
 
 class DeadlineResource extends Resource
 {
@@ -68,17 +69,21 @@ class DeadlineResource extends Resource
                 Toggle::make('met')->label('Rispettata')
                     ->live()
                     ->visible(fn ($record) => !is_null($record))
+                    ->afterStateUpdated(function ($set, $state) {
+                        $set('met_date', now()->toDateString());
+                        $set('met_user_id', Auth::user()->id);
+                    })
                     ->columnSpan(['sm' => 'full', 'md' => 2]),
                 DatePicker::make('met_date')->label('Rispetatta il')
                     ->required()
                     ->visible(fn (callable $get) => $get('met'))
                     ->columnSpan(['sm' => 'full', 'md' => 2]),
-                Select::make('met_user_id')->label('Registrato da')
+                Select::make('met_user_id')->label('Rispettata da')
+                    ->required()
                     ->relationship(name: 'metUser', titleAttribute: 'name')
-                    ->disabled()
                     ->visible(fn (callable $get) => $get('met'))
                     ->columnSpan(['sm' => 'full', 'md' => 2]),
-                Textarea::make('bidding_note')->label('Note')
+                Textarea::make('note')->label('Note')
                     ->rows(4)
                     ->columnSpan(['sm' => 'full', 'md' => 12]),
                 DatePicker::make('created_at')->label('Data inserimento')
