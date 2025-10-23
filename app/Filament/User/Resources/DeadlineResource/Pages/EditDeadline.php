@@ -30,7 +30,7 @@ class EditDeadline extends EditRecord
                 ->modalWidth('xs')
                 ->form([
                     DatePicker::make('new_deadline_date')
-                        ->label('Nuova Data Scadenza')
+                        ->label('Nuova data scadenza')
                         ->required()
                         ->default($defaultDate),
                 ])
