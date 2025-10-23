@@ -31,11 +31,6 @@ class Deadline extends Model
         'renew' => 'boolean',
     ];
 
-    public function scope()
-    {
-        return $this->belongsTo(ScopeType::class);
-    }
-
     public function insertUser()
     {
         return $this->belongsTo(User::class, 'insert_user_id');

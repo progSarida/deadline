@@ -19,6 +19,8 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ToggleColumn;
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\Indicator;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -166,17 +168,111 @@ class DeadlineResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                SelectFilter::make('scope_tyoe_id')->label('Ambito')
+                SelectFilter::make('scope_type_id')->label('Ambito')
                     ->relationship(
-                        name: 'scope',
+                        name: 'scopeType',
                         titleAttribute: 'name',
                         modifyQueryUsing: fn ($query) => $query->orderBy('position')
                     )
                     ->searchable()
                     ->multiple()->preload(),
-                SelectFilter::make('timespan')->label('Periodicità')
-                    ->options(Timespan::class)
-                    ->multiple()->preload(),
+                SelectFilter::make('timespan')
+                    ->label('Periodicità')
+                    ->options(function () {
+                        $options = ['null' => 'Non periodica'];                                             // creo un array con l'opzione per "Non periodica" (timespan null)
+                        
+                        foreach (Timespan::cases() as $case) {
+                            $options[$case->value] = $case->getLabel();                                     // aggiungo le opzioni dell'enum Timespan
+                        }
+                        
+                        return $options;
+                    })
+                    ->modifyQueryUsing(function (Builder $query, $state) {
+                        if (empty($state['values'])) {
+                            return $query;                                                                  // se il filtro non è stato usato (nessuna selezione), non modifico la query
+                        }
+                        
+                        if (in_array('null', $state['values'])) {                                           // "Non periodica" è selezionata
+                            $otherValues = array_diff($state['values'], ['null']);                          // rimuovo 'null' dall'array per ottenere le altre opzioni selezionate
+                            
+                            if (empty($otherValues)) {                                                      // solo "Non periodica" è selezionata
+                                $query->whereNull('timespan');
+                            } else {                                                                        // altre opzioni sono selezionate insieme a "Non periodica"
+                                $query->where(function ($q) use ($otherValues) {
+                                    $q->whereNull('timespan')
+                                    ->orWhereIn('timespan', $otherValues);
+                                });
+                            }
+                        } else {                                                                            // "Non periodica" non è tra le opzioni selezionate
+                            $query->whereIn('timespan', $state['values']);
+                        }
+                        
+                        return $query;
+                    })
+                    ->multiple()
+                    ->preload(),
+                SelectFilter::make('show_met')
+                    ->label('Rispettate')
+                    ->options([
+                        '0' => 'Non rispettate',
+                        '1' => 'Rispettate'
+                    ])
+                    ->modifyQueryUsing(function (Builder $query, $state) {
+                        if ($state['value'] !== null && $state['value'] !== '') {
+                            $query->where('met', (bool) $state['value']);
+                        }
+                        
+                        return $query;
+                    }),
+                Filter::make('deadline_period')
+                    ->form([
+                        DatePicker::make('deadline_from')
+                            ->label('Data scadenza da')
+                            ->native(false)
+                            ->displayFormat('d/m/Y')
+                            ->placeholder('Seleziona data inizio'),
+                        
+                        Forms\Components\DatePicker::make('deadline_to')
+                            ->label('Data scadenza a')
+                            ->native(false)
+                            ->displayFormat('d/m/Y')
+                            ->placeholder('Seleziona data fine'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['deadline_from'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('deadline_date', '>=', $date),
+                            )
+                            ->when(
+                                $data['deadline_to'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('deadline_date', '<=', $date),
+                            );
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        $indicators = [];
+                        
+                        $from = $data['deadline_from'] ?? null;
+                        $to = $data['deadline_to'] ?? null;
+                        
+                        if ($from && $to) {                                                                                         // entrambe le date sono selezionate
+                            $indicators[] = Indicator::make('Scadenze dal ' . \Carbon\Carbon::parse($from)->format('d/m/Y') . ' 
+                                                al ' . \Carbon\Carbon::parse($to)->format('d/m/Y'))
+                                ->removeField('deadline_from')
+                                ->removeField('deadline_to');
+                        } else {
+                            if ($from) {                                                                                            // è selezionata solo la data di inizio
+                                $indicators[] = Indicator::make('Scadenza da: ' . \Carbon\Carbon::parse($from)->format('d/m/Y'))
+                                    ->removeField('deadline_from');
+                            }
+                            if ($to) {                                                                                              // è selezionata solo la data di fine
+                                $indicators[] = Indicator::make('Scadenza a: ' . \Carbon\Carbon::parse($to)->format('d/m/Y'))
+                                    ->removeField('deadline_to');
+                            }
+                        }
+                        
+                        return $indicators;
+                    })
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),

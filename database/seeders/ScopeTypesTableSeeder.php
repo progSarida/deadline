@@ -18,7 +18,7 @@ class ScopeTypesTableSeeder extends Seeder
             0 =>
             array (
                 'id' => 1,
-                'name' => 'Fatture da oagare/Pagamenti',
+                'name' => 'Fatture da pagare/Pagamenti',
                 'description' => '',
                 'position' => 1,
                 'created_at' => NULL,
