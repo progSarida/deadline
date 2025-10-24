@@ -51,6 +51,17 @@ class Deadline extends Model
         return $this->belongsTo(ScopeType::class, 'scope_type_id');
     }
 
+    // query per filtro ambiti assegnati
+    public function scopeUserTypes($query)
+    {
+        $scopes = ScopeType::join('user_scope_type', 'scope_types.id', '=', 'user_scope_type.scope_type_id')
+                    ->where('user_scope_type.user_id', '=', Auth::user()->id)
+                    ->pluck('scope_types.id');
+
+        if(Auth::user()->is_admin) return $query;                                   // se l'utente è admin vede tutte le scadenze
+        else return $query->whereIn('scope_type_id', $scopes);                      // altrimenti vede solo quelle per cui ha dei permessi
+    }
+
     protected static function booted()
     {
         static::creating(function ($deadline) {

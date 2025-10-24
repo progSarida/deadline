@@ -2,10 +2,15 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\Permission;
 use App\Filament\Resources\UserResource\Pages;
 use App\Filament\Resources\UserResource\RelationManagers;
+use App\Models\ScopeType;
 use App\Models\User;
 use Filament\Forms;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
@@ -47,6 +52,72 @@ class UserResource extends Resource
                     ->columnSpan(2)
                     ->onColor('success')
                     ->offColor('danger'),
+                Section::make('Ambiti e Permessi')
+                    ->collapsed()
+                    ->schema([
+                        Repeater::make('scopeTypes')
+                            ->label('')
+                            ->schema([
+                                Select::make('scope_type_id')
+                                    ->label('Ambito')
+                                    ->options(ScopeType::pluck('name', 'id')->toArray())
+                                    ->required()
+                                    ->distinct()
+                                    ->searchable()
+                                    ->preload()
+                                    ->columnSpan(2),
+                                Select::make('permission')
+                                    ->label('Permesso')
+                                    ->options(Permission::class)
+                                    ->required()
+                                    ->columnSpan(2),
+                            ])
+                            ->columns(4)
+                            ->itemLabel(fn (array $state): ?string =>
+                                $state['scope_type_id'] && isset($state['permission'])
+                                    ? (ScopeType::find($state['scope_type_id'])?->name . ' - ' . Permission::from($state['permission'])->getLabel())
+                                    : 'Nuovo Ambito'
+                            )
+                            ->addActionLabel('Aggiungi Ambito')
+                            ->deleteAction(
+                                fn($action) => $action->requiresConfirmation()
+                            )
+                            ->mutateRelationshipDataBeforeCreateUsing(function (array $data): array {
+                                return $data;
+                            })
+                            ->mutateRelationshipDataBeforeSaveUsing(function (array $data): array {
+                                return $data;
+                            })
+                            ->saveRelationshipsUsing(function ($component, $state, $record) {
+                                $record->scopeTypes()->detach();
+
+                                foreach ($state as $assignment) {
+                                    if (isset($assignment['scope_type_id'])) {
+                                        $record->scopeTypes()->attach($assignment['scope_type_id'], [
+                                            'permission' => $assignment['permission'],
+                                        ]);
+                                    }
+                                }
+                            })
+                            ->afterStateHydrated(function ($component, $state, $record) {
+                                if (!$record || !$record->exists) {
+                                    return;
+                                }
+
+                                $scopeTypes = $record->scopeTypes()->get();
+                                $assignments = [];
+
+                                foreach ($scopeTypes as $scopeType) {
+                                    $assignments[] = [
+                                        'scope_type_id' => $scopeType->id,
+                                        'permission' => $scopeType->pivot->permission,
+                                    ];
+                                }
+
+                                $component->state($assignments);
+                            }),
+                    ])
+                    ->columnSpan(['sm' => 'full', 'md' => 12]),
             ]);
     }
 

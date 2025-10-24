@@ -113,6 +113,7 @@ class DeadlineResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->query(Deadline::userTypes())
             ->defaultSort('deadline_date', 'asc')
             ->columns([
                 TextColumn::make('scopeType.name')->label('Ambito'),
@@ -180,21 +181,21 @@ class DeadlineResource extends Resource
                     ->label('Periodicità')
                     ->options(function () {
                         $options = ['null' => 'Non periodica'];                                             // creo un array con l'opzione per "Non periodica" (timespan null)
-                        
+
                         foreach (Timespan::cases() as $case) {
                             $options[$case->value] = $case->getLabel();                                     // aggiungo le opzioni dell'enum Timespan
                         }
-                        
+
                         return $options;
                     })
                     ->modifyQueryUsing(function (Builder $query, $state) {
                         if (empty($state['values'])) {
                             return $query;                                                                  // se il filtro non è stato usato (nessuna selezione), non modifico la query
                         }
-                        
+
                         if (in_array('null', $state['values'])) {                                           // "Non periodica" è selezionata
                             $otherValues = array_diff($state['values'], ['null']);                          // rimuovo 'null' dall'array per ottenere le altre opzioni selezionate
-                            
+
                             if (empty($otherValues)) {                                                      // solo "Non periodica" è selezionata
                                 $query->whereNull('timespan');
                             } else {                                                                        // altre opzioni sono selezionate insieme a "Non periodica"
@@ -206,7 +207,7 @@ class DeadlineResource extends Resource
                         } else {                                                                            // "Non periodica" non è tra le opzioni selezionate
                             $query->whereIn('timespan', $state['values']);
                         }
-                        
+
                         return $query;
                     })
                     ->multiple()
@@ -221,7 +222,7 @@ class DeadlineResource extends Resource
                         if ($state['value'] !== null && $state['value'] !== '') {
                             $query->where('met', (bool) $state['value']);
                         }
-                        
+
                         return $query;
                     }),
                 Filter::make('deadline_period')
@@ -231,7 +232,7 @@ class DeadlineResource extends Resource
                             ->native(false)
                             ->displayFormat('d/m/Y')
                             ->placeholder('Seleziona data inizio'),
-                        
+
                         Forms\Components\DatePicker::make('deadline_to')
                             ->label('Data scadenza a')
                             ->native(false)
@@ -251,12 +252,12 @@ class DeadlineResource extends Resource
                     })
                     ->indicateUsing(function (array $data): array {
                         $indicators = [];
-                        
+
                         $from = $data['deadline_from'] ?? null;
                         $to = $data['deadline_to'] ?? null;
-                        
+
                         if ($from && $to) {                                                                                         // entrambe le date sono selezionate
-                            $indicators[] = Indicator::make('Scadenze dal ' . \Carbon\Carbon::parse($from)->format('d/m/Y') . ' 
+                            $indicators[] = Indicator::make('Scadenze dal ' . \Carbon\Carbon::parse($from)->format('d/m/Y') . '
                                                 al ' . \Carbon\Carbon::parse($to)->format('d/m/Y'))
                                 ->removeField('deadline_from')
                                 ->removeField('deadline_to');
@@ -270,7 +271,7 @@ class DeadlineResource extends Resource
                                     ->removeField('deadline_to');
                             }
                         }
-                        
+
                         return $indicators;
                     })
             ])
