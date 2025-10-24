@@ -2,10 +2,12 @@
 
 namespace App\Filament\User\Resources\DeadlineResource\Pages;
 
+use App\Enums\Permission;
 use App\Filament\User\Resources\DeadlineResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Support\Enums\MaxWidth;
+use Illuminate\Support\Facades\Auth;
 
 class ListDeadlines extends ListRecords
 {
@@ -14,7 +16,15 @@ class ListDeadlines extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            Actions\CreateAction::make()
+                ->visible(function () {
+                    $scopes = Auth::user()->scopeTypes;
+                    $noRead = false;
+                    foreach($scopes as $scope) {
+                        $noRead = $scope->pivot->permission !== Permission::READ->value;
+                    }
+                    return $noRead;
+                }),
         ];
     }
 

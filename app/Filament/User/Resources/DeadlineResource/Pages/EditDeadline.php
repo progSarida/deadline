@@ -2,6 +2,7 @@
 
 namespace App\Filament\User\Resources\DeadlineResource\Pages;
 
+use App\Enums\Permission;
 use App\Filament\User\Resources\DeadlineResource;
 use App\Models\Deadline;
 use Carbon\Carbon;
@@ -22,7 +23,10 @@ class EditDeadline extends EditRecord
         $currentDeadline = $this->record;
         $defaultDate = $this->calculateDefaultDate($currentDeadline);
         return [
-            DeleteAction::make(),
+            DeleteAction::make()
+                ->visible(function ($record) {
+                    return Auth::user()->is_admin || Auth::user()->scopeTypes->where('id', $record->scope_type_id)->first()->pivot->permission === Permission::DELETE->value;
+                }),
             Action::make('renew_deadline')
                 ->label('Rinnovo scadenza')
                 ->visible(fn () => ($currentDeadline->recurrent && $currentDeadline->met && !$currentDeadline->renew))

@@ -2,6 +2,7 @@
 
 namespace App\Filament\User\Resources;
 
+use App\Enums\Permission;
 use App\Enums\Timespan;
 use App\Filament\User\Resources\DeadlineResource\Pages;
 use App\Filament\User\Resources\DeadlineResource\RelationManagers;
@@ -39,9 +40,20 @@ class DeadlineResource extends Resource
     {
         return $form
             ->columns(12)
+            ->disabled(function ($record, $operation) {
+                if ($operation === 'edit' && !Auth::user()->is_admin) {
+                    return Auth::user()->scopeTypes->where('id', $record->scope_type_id)                // se l'utente non è admin deve avere permessi non di lettura
+                        ->first()->pivot->permission === Permission::READ->value;
+                }
+                return false;                                                                           // se è admin o siamo in create il form è abilitato
+            })
             ->schema([
                 Select::make('scope_type_id')->label('Ambito')
-                    ->relationship(name: 'scopeType', titleAttribute: 'name')
+                    ->relationship(
+                        name: 'scopeType',
+                        titleAttribute: 'name',
+                        // modifyQueryUsing: fn ($query) => $query->orderBy('position')                 // filtro opzioni ambiti con permesso di scrittura
+                    )
                     ->searchable()
                     ->preload()
                     ->required()
