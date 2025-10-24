@@ -18,12 +18,16 @@ class ListDeadlines extends ListRecords
         return [
             Actions\CreateAction::make()
                 ->visible(function () {
-                    $scopes = Auth::user()->scopeTypes;
-                    $noRead = false;
-                    foreach($scopes as $scope) {
-                        $noRead = $scope->pivot->permission !== Permission::READ->value;
+                    if(Auth::user()->is_admin)
+                        return true;
+                    else {
+                        $scopes = Auth::user()->scopeTypes;
+                        $noRead = false;
+                        foreach($scopes as $scope) {
+                            $noRead = $scope->pivot->permission !== Permission::READ->value;
+                        }
+                        return $noRead;
                     }
-                    return $noRead;
                 }),
         ];
     }

@@ -7,6 +7,7 @@ use App\Enums\Timespan;
 use App\Filament\User\Resources\DeadlineResource\Pages;
 use App\Filament\User\Resources\DeadlineResource\RelationManagers;
 use App\Models\Deadline;
+use App\Models\ScopeType;
 use Filament\Forms;
 use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\DatePicker;
@@ -40,19 +41,30 @@ class DeadlineResource extends Resource
     {
         return $form
             ->columns(12)
-            ->disabled(function ($record, $operation) {
-                if ($operation === 'edit' && !Auth::user()->is_admin) {
-                    return Auth::user()->scopeTypes->where('id', $record->scope_type_id)                // se l'utente non è admin deve avere permessi non di lettura
-                        ->first()->pivot->permission === Permission::READ->value;
+            ->disabled(function ($record) use($form) {
+                if ($form->getOperation() === 'edit' && !Auth::user()->is_admin) {
+                    return optional(Auth::user()->scopeTypes                                    // se l'utente non è admin deve avere permessi non di lettura
+                            ->where('id', optional($record)->scope_type_id)
+                            ->first())->pivot->permission === Permission::READ->value;        
                 }
-                return false;                                                                           // se è admin o siamo in create il form è abilitato
+                return false;                                                                   // se è admin o siamo in create il form è abilitato
             })
             ->schema([
                 Select::make('scope_type_id')->label('Ambito')
                     ->relationship(
                         name: 'scopeType',
                         titleAttribute: 'name',
-                        // modifyQueryUsing: fn ($query) => $query->orderBy('position')                 // filtro opzioni ambiti con permesso di scrittura
+                        modifyQueryUsing: function ($query) {                                   // filtro opzioni ambiti con permesso di scrittura
+                            if ((bool) Auth::user()->is_admin) {
+                                return $query->orderBy('position');                             // se l'utente è admin, mostra tutti gli scope types
+                            }
+                            return $query->whereIn('scope_types.id', function ($subQuery) {     // altrimenti filtra gli scope types dell'utente con permesso diverso da READ
+                                $subQuery->select('scope_type_id')
+                                    ->from('user_scope_type')
+                                    ->where('user_id', Auth::user()->id)
+                                    ->where('permission', '!=', Permission::READ->value);
+                            })->orderBy('position');
+                        }
                     )
                     ->searchable()
                     ->preload()
