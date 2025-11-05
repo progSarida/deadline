@@ -58,7 +58,8 @@ class Deadline extends Model
                     ->where('user_scope_type.user_id', '=', Auth::user()->id)
                     ->pluck('scope_types.id');
 
-        if(Auth::user()->is_admin) return $query;                                   // se l'utente è admin vede tutte le scadenze
+        // if(Auth::user()->is_admin) return $query;                                   // se l'utente è admin vede tutte le scadenze
+        if(Auth::user()->hasRole('super_admin')) return $query;                     // se l'utente è admin vede tutte le scadenze
         else return $query->whereIn('scope_type_id', $scopes);                      // altrimenti vede solo quelle per cui ha dei permessi
     }
 

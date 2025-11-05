@@ -18,7 +18,8 @@ class ListDeadlines extends ListRecords
         return [
             Actions\CreateAction::make()
                 ->visible(function () {
-                    if(Auth::user()->is_admin)
+                    // if(Auth::user()->is_admin)
+                    if(Auth::user()->hasRole('super_admin'))
                         return true;
                     else {
                         $scopes = Auth::user()->scopeTypes;

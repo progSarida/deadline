@@ -42,10 +42,11 @@ class DeadlineResource extends Resource
         return $form
             ->columns(12)
             ->disabled(function ($record) use($form) {
-                if ($form->getOperation() === 'edit' && !Auth::user()->is_admin) {
+                // if ($form->getOperation() === 'edit' && !Auth::user()->is_admin) {
+                if ($form->getOperation() === 'edit' && !Auth::user()->hasRole('super_admin')) {
                     return optional(Auth::user()->scopeTypes                                    // se l'utente non è admin deve avere permessi non di lettura
                             ->where('id', optional($record)->scope_type_id)
-                            ->first())->pivot->permission === Permission::READ->value;        
+                            ->first())->pivot->permission === Permission::READ->value;
                 }
                 return false;                                                                   // se è admin o siamo in create il form è abilitato
             })
@@ -55,7 +56,8 @@ class DeadlineResource extends Resource
                         name: 'scopeType',
                         titleAttribute: 'name',
                         modifyQueryUsing: function ($query) {                                   // filtro opzioni ambiti con permesso di scrittura
-                            if ((bool) Auth::user()->is_admin) {
+                            // if ((bool) Auth::user()->is_admin) {
+                            if ((bool) Auth::user()->hasRole('super_admin')) {
                                 return $query->orderBy('position');                             // se l'utente è admin, mostra tutti gli scope types
                             }
                             return $query->whereIn('scope_types.id', function ($subQuery) {     // altrimenti filtra gli scope types dell'utente con permesso diverso da READ

@@ -25,7 +25,8 @@ class EditDeadline extends EditRecord
         return [
             DeleteAction::make()
                 ->visible(function ($record) {
-                    return Auth::user()->is_admin || Auth::user()->scopeTypes->where('id', $record->scope_type_id)->first()->pivot->permission === Permission::DELETE->value;
+                    // return Auth::user()->is_admin || Auth::user()->scopeTypes->where('id', $record->scope_type_id)->first()->pivot->permission === Permission::DELETE->value;
+                    return Auth::user()->hasRole('super_admin') || Auth::user()->scopeTypes->where('id', $record->scope_type_id)->first()->pivot->permission === Permission::DELETE->value;
                 }),
             Action::make('renew_deadline')
                 ->label('Rinnovo scadenza')
