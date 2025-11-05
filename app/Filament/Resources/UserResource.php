@@ -56,6 +56,7 @@ class UserResource extends Resource
                 Placeholder::make('')->label('')
                     ->columnSpan(3),
                 Forms\Components\Select::make('roles')
+                    ->label('Ruolo')
                     ->relationship('roles', 'name')
                     // ->multiple()
                     ->preload()
