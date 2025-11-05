@@ -127,7 +127,7 @@ class UserResource extends Resource
                                 $component->state($assignments);
                             }),
                     ])
-                    ->columnSpan(['sm' => 'full', 'md' => 12]),
+                    ->columnSpan(['sm' => 'full', 'md' => 6]),
             ]);
     }
 
