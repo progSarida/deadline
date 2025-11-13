@@ -41,15 +41,15 @@ class DeadlineResource extends Resource
     {
         return $form
             ->columns(12)
-            ->disabled(function ($record) use($form) {
-                // if ($form->getOperation() === 'edit' && !Auth::user()->is_admin) {
-                if ($form->getOperation() === 'edit' && !Auth::user()->hasRole('super_admin')) {
-                    return optional(Auth::user()->scopeTypes                                    // se l'utente non è admin deve avere permessi non di lettura
-                            ->where('id', optional($record)->scope_type_id)
-                            ->first())->pivot->permission === Permission::READ->value;
-                }
-                return false;                                                                   // se è admin o siamo in create il form è abilitato
-            })
+            // ->disabled(function ($record) use($form) {
+            //     // if ($form->getOperation() === 'edit' && !Auth::user()->is_admin) {
+            //     if ($form->getOperation() === 'edit' && !Auth::user()->hasRole('super_admin')) {
+            //         return optional(Auth::user()->scopeTypes                                    // se l'utente non è admin deve avere permessi non di lettura
+            //                 ->where('id', optional($record)->scope_type_id)
+            //                 ->first())->pivot->permission === Permission::READ->value;
+            //     }
+            //     return false;                                                                   // se è admin o siamo in create il form è abilitato
+            // })
             ->schema([
                 Select::make('scope_type_id')->label('Ambito')
                     ->relationship(
@@ -302,6 +302,7 @@ class DeadlineResource extends Resource
                     })
             ])
             ->actions([
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
@@ -324,6 +325,7 @@ class DeadlineResource extends Resource
             'index' => Pages\ListDeadlines::route('/'),
             'create' => Pages\CreateDeadline::route('/create'),
             'edit' => Pages\EditDeadline::route('/{record}/edit'),
+            'view' => Pages\ViewDeadline::route('/{record}'),
         ];
     }
 }
