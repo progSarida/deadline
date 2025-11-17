@@ -3,12 +3,14 @@
 namespace App\Models;
 
 use App\Enums\Permission;
+use Filament\Facades\Filament;
 use Filament\Models\Contracts\FilamentUser;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
+use Symfony\Component\HttpFoundation\Response;
 
 class User extends Authenticatable implements FilamentUser
 {
@@ -50,5 +52,19 @@ class User extends Authenticatable implements FilamentUser
         return $this->belongsToMany(ScopeType::class, 'user_scope_type')
                     ->withPivot('permission')
                     ->withTimestamps();
+    }
+
+    public function loginRedirect(): ?Response
+    {
+        $destinationPanelId = null;
+        if ($this->is_admin)
+            $destinationPanelId = 'admin';
+        else
+            $destinationPanelId = 'user';
+        
+        if (!$destinationPanelId)
+            return abort(403, 'Accesso non autorizzato a nessun pannello.');
+        
+        return redirect()->to(Filament::getPanel($destinationPanelId)->getUrl());
     }
 }

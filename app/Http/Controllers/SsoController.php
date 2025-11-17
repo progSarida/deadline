@@ -155,12 +155,9 @@ class SsoController extends Controller
             );
             
 
-            DB::table('model_has_roles')->insert([
-                'role_id'      => $ssoRole['id'],
-                'model_type'   => 'App\Models\User', // O il namespace corretto del tuo modello
-                'model_id'     => $user->id,
-                'company_id'   => 10000, // ✅ Inserisci qui il valore richiesto
-            ]);
+            $user->assignRole($role);
+            $user->is_admin = true;
+            $user->save();
 
             Log::info("SSO Login: User {$user->email} assigned role: {$ssoRole['name']} (Created if non-existent).");
         }
