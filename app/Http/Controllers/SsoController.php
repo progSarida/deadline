@@ -145,6 +145,7 @@ class SsoController extends Controller
         $ssoScope = $config['scope'];
         $ssoRole = $ssoUserData['application_roles'][$ssoScope] ?? null;
 
+        dd($ssoRole);
         // Verifica l'esistenza della classe SpatieRole prima di tentare l'assegnazione
         if ($ssoRole['name'] == "super_admin" && class_exists('Spatie\Permission\Models\Role')) {
             $user->syncRoles([]); 
