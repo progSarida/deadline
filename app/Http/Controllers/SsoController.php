@@ -15,6 +15,7 @@ use Illuminate\Support\Str;
 use Spatie\Permission\Models\Role as SpatieRole; 
 use Illuminate\Support\Facades\URL; 
 use Illuminate\Support\Facades\Session;
+use Symfony\Component\HttpFoundation\Cookie as HttpFoundationCookie;
 
 class SsoController extends Controller
 {
