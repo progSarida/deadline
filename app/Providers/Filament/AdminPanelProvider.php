@@ -64,6 +64,9 @@ class AdminPanelProvider extends PanelProvider
                     ->label('Operatore')
                     ->url('/user')
                     ->icon('fas-user'),
+                    'logout'=>MenuItem::make()
+                    ->label('Vai al Portale')
+                    ->icon('heroicon-o-arrow-left-start-on-rectangle'),
                 // ...
             ]);
     }

@@ -62,7 +62,10 @@ class UserPanelProvider extends PanelProvider
                 // ->visible(fn (): bool => Auth::user()->is_admin)
                 ->visible(fn (): bool => Auth::user()->hasRole('super_admin'))
                 ->url('/admin')
-                ->icon('fas-user-lock')
+                ->icon('fas-user-lock'),
+                'logout'=>MenuItem::make()
+                    ->label('Vai al Portale')
+                    ->icon('heroicon-o-arrow-left-start-on-rectangle'),
             ]);
     }
 }
