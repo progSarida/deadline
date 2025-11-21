@@ -23,11 +23,11 @@ class EditDeadline extends EditRecord
         $currentDeadline = $this->record;
         $defaultDate = $this->calculateDefaultDate($currentDeadline);
         return [
-            DeleteAction::make()
-                ->visible(function ($record) {
-                    // return Auth::user()->is_admin || Auth::user()->scopeTypes->where('id', $record->scope_type_id)->first()->pivot->permission === Permission::DELETE->value;
-                    return Auth::user()->hasRole('super_admin') || Auth::user()->scopeTypes->where('id', $record->scope_type_id)->first()->pivot->permission === Permission::DELETE->value;
-                }),
+            // DeleteAction::make()
+            //     ->visible(function ($record) {
+            //         // return Auth::user()->is_admin || Auth::user()->scopeTypes->where('id', $record->scope_type_id)->first()->pivot->permission === Permission::DELETE->value;
+            //         return Auth::user()->hasRole('super_admin') || Auth::user()->scopeTypes->where('id', $record->scope_type_id)->first()->pivot->permission === Permission::DELETE->value;
+            //     }),
             Action::make('renew_deadline')
                 ->label('Rinnovo scadenza')
                 ->visible(fn () => ($currentDeadline->recurrent && $currentDeadline->met && !$currentDeadline->renew))
@@ -104,5 +104,39 @@ class EditDeadline extends EditRecord
     protected function afterSave(): void
     {
         $this->refreshFormData(['updated_at', 'modify_user_id']);                   // ricarico i campi specificati
+    }
+
+    protected function getFormActions(): array
+    {
+        return [
+            $this->getSaveFormAction()->color('success'),
+            $this->getCancelFormAction(),
+            $this->getDeleteFormAction()
+                ->extraAttributes([
+                    'class' => ' md:ml-auto md:w-auto ',
+                ]),
+        ];
+    }
+
+    protected function getDeleteFormAction()
+    {
+        return DeleteAction::make()
+                ->visible(function ($record) {
+                    // return Auth::user()->is_admin || Auth::user()->scopeTypes->where('id', $record->scope_type_id)->first()->pivot->permission === Permission::DELETE->value;
+                    return Auth::user()->hasRole('super_admin') || Auth::user()->scopeTypes->where('id', $record->scope_type_id)->first()->pivot->permission === Permission::DELETE->value;
+                });
+    }
+
+    protected function getCancelFormAction(): Actions\Action
+    {
+        return Actions\Action::make('cancel')
+            ->label('Indietro')
+            ->color('gray')
+            ->url(function () {
+                if ($this->previousUrl && str($this->previousUrl)->contains('/deadlines?')) {
+                    return $this->previousUrl;
+                }
+                return DeadlineResource::getUrl('index');
+            });
     }
 }
