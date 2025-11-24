@@ -75,12 +75,14 @@ class DeadlineResource extends Resource
                     ->columnSpan(['sm' => 'full', 'md' => 3]),
                 DatePicker::make('deadline_date')->label('Scadenza')
                     ->required()
+                    ->extraInputAttributes(['class' => 'text-center'])
                     ->columnSpan(['sm' => 'full', 'md' => 2]),
                 Toggle::make('recurrent')->label('Scadenza periodica')
                     ->live()
                     ->columnSpan(['sm' => 'full', 'md' => 3]),
                 TextInput::make('quantity')->label('Quantità')
                     ->required()
+                    ->extraInputAttributes(['class' => 'text-right'])
                     ->columnSpan(['sm' => 'full', 'md' => 1])
                     ->visible(fn (callable $get) => $get('recurrent')),
                 Select::make('timespan')->label('Periodicità')
@@ -104,6 +106,7 @@ class DeadlineResource extends Resource
                     ->columnSpan(['sm' => 'full', 'md' => 2]),
                 DatePicker::make('met_date')->label('Rispetatta il')
                     ->required()
+                    ->extraInputAttributes(['class' => 'text-center'])
                     ->visible(fn (callable $get) => $get('met'))
                     ->columnSpan(['sm' => 'full', 'md' => 2]),
                 Select::make('met_user_id')->label('Rispettata da')
@@ -116,6 +119,7 @@ class DeadlineResource extends Resource
                     ->columnSpan(['sm' => 'full', 'md' => 12]),
                 DatePicker::make('created_at')->label('Data inserimento')
                     ->disabled()
+                    ->extraInputAttributes(['class' => 'text-center'])
                     ->visible(fn (callable $get) => $get('insert_user_id'))
                     ->columnSpan(['sm' => 'full', 'md' => 2]),
                 Select::make('insert_user_id')->label('Inserito da')
@@ -126,6 +130,7 @@ class DeadlineResource extends Resource
                     ->columnSpan(['sm' => 'full', 'md' => 2]),
                 DatePicker::make('updated_at')->label('Data modifica')
                     ->disabled()
+                    ->extraInputAttributes(['class' => 'text-center'])
                     ->visible(fn (callable $get) => $get('modify_user_id'))
                     ->columnSpan(['sm' => 'full', 'md' => 2]),
                 Select::make('modify_user_id')->label('Modificato da')
