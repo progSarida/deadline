@@ -148,8 +148,11 @@ class DeadlineResource extends Resource
             ->defaultSort('deadline_date', 'asc')
             ->columns([
                 TextColumn::make('scopeType.name')->label('Ambito'),
-                TextColumn::make('description')->label('Descrizione')
-                    ->searchable(),
+                TextColumn::make('description')
+                    ->label('Descrizione')
+                    ->searchable()
+                    ->limit(40)
+                    ->tooltip(fn ($record) => $record->description),
                 TextColumn::make('recurrent')
                     ->label('Periodica')
                     ->formatStateUsing(function ($state) {
@@ -187,7 +190,11 @@ class DeadlineResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('met')
                     ->label('Rispettata')
-                    ->formatStateUsing(function ($state) {
+                    ->formatStateUsing(function ($record, $state) {
+                        $deadline = \Carbon\Carbon::parse($record->deadline_date);
+                        if ($deadline->isFuture() || $deadline->isToday()) {
+                            return '';
+                        }
                         return $state ? 'Sì' : 'No';
                     }),
                 TextColumn::make('met_date')
@@ -243,15 +250,42 @@ class DeadlineResource extends Resource
                     })
                     ->multiple()
                     ->preload(),
-                SelectFilter::make('show_met')
-                    ->label('Rispettate')
+                // SelectFilter::make('show_met')
+                //     ->label('Rispettate')
+                //     ->options([
+                //         '0' => 'Non rispettate',
+                //         '1' => 'Rispettate'
+                //     ])
+                //     ->modifyQueryUsing(function (Builder $query, $state) {
+                //         if ($state['value'] !== null && $state['value'] !== '') {
+                //             $query->where('met', (bool) $state['value']);
+                //         }
+
+                //         return $query;
+                //     }),
+                SelectFilter::make('stato_scadenza')
+                    ->label('Stato Scadenza')
                     ->options([
-                        '0' => 'Non rispettate',
-                        '1' => 'Rispettate'
+                        'respected'    => 'Rispettate (Sì)',
+                        'not_met_late' => 'Non Rispettate (No)',
+                        'in_progress'  => 'In Corso (Non Scadute)', // Nuova opzione
                     ])
-                    ->modifyQueryUsing(function (Builder $query, $state) {
-                        if ($state['value'] !== null && $state['value'] !== '') {
-                            $query->where('met', (bool) $state['value']);
+                    ->modifyQueryUsing(function (Builder $query, array $state): Builder {
+                        if (!isset($state['value']) || $state['value'] === null || $state['value'] === '') {
+                            return $query;
+                        }
+                        switch ($state['value']) {
+                            case 'respected':
+                                // Mostra solo i record dove met è TRUE.
+                                return $query->where('met', true);
+                            case 'not_met_late':
+                                // Mostra i record dove met è FALSE E la data è scaduta.
+                                return $query
+                                    ->where('met', false)
+                                    ->whereDate('deadline_date', '<', now());
+                            case 'in_progress':
+                                // Mostra i record dove la data NON è scaduta.
+                                return $query->whereDate('deadline_date', '>=', now());
                         }
 
                         return $query;
