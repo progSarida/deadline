@@ -57,6 +57,8 @@ class UserPanelProvider extends PanelProvider
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
             ])
+            ->databaseNotifications()
+            ->databaseNotificationsPolling(5)
             ->authMiddleware([
                 Authenticate::class,
             ])

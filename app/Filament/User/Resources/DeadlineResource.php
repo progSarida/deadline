@@ -192,7 +192,7 @@ class DeadlineResource extends Resource
                     ->label('Rispettata')
                     ->formatStateUsing(function ($record, $state) {
                         $deadline = \Carbon\Carbon::parse($record->deadline_date);
-                        if ($deadline->isFuture() || $deadline->isToday()) {
+                        if (!$state && ($deadline->isFuture() || $deadline->isToday())) {
                             return '';
                         }
                         return $state ? 'Sì' : 'No';
