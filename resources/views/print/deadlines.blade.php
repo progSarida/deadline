@@ -76,6 +76,13 @@
         /* Separatore finale */
         tr.separator {
             border-bottom: 2px dashed black;
+            height: 0;
+            line-height: 0;
+        }
+        tr.separator td {
+            padding: 0;
+            height: 0;
+            line-height: 0;
         }
 
         .badge {
@@ -109,12 +116,12 @@
         @if(!empty($filters['stato_scadenza']['value'] ?? null))
             <li>Stato scadenza: {{ ['respected'=>'Rispettate', 'not_met_late'=>'Non rispettate (scadute)', 'in_progress'=>'In corso'][$filters['stato_scadenza']['value']] }}</li>
         @endif
-        @if(!empty($filters['deadline_period']['deadline_from']) || !empty($filters['deadline_period']['deadline_to']))
+        @if(!empty($filters['deadline_period']))
             <li>Periodo scadenza:
                 @php
                     $from = $filters['deadline_period']['deadline_from'] ?? null;
                     $to   = $filters['deadline_period']['deadline_to'] ?? null;
-                    echo $from && $to ? "dal $from al $to" : ($from ? "dal $from" : ($to ? "al $to" : ""));
+                    echo $from && $to ? "dal $from al $to" : ($from ? "dal $from" : "al $to");
                 @endphp
             </li>
         @endif
