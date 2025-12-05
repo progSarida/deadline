@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 class Deadline extends Model
 {
     protected $fillable = [
+        'prev_deadline_id',
         'scope_type_id',
         'deadline_date',
         'recurrent',
@@ -95,7 +96,11 @@ class Deadline extends Model
         });
 
         static::deleting(function ($deadline) {
-            //
+            $prev = Deadline::find($deadline->prev_deadline_id);
+            if ($prev) {
+                $prev->renew = false;
+                $prev->save();
+            }
         });
 
         static::deleted(function ($deadline) {

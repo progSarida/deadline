@@ -18,63 +18,134 @@ class EditDeadline extends EditRecord
 {
     protected static string $resource = DeadlineResource::class;
 
+    public bool $shouldShowRenewModal = false;
+
     protected function getHeaderActions(): array
     {
-        $currentDeadline = $this->record;
-        $defaultDate = $this->calculateDefaultDate($currentDeadline);
+        $current = $this->record;
+        $previous = Deadline::where('deadline_date', '<', $current->deadline_date)->orderBy('deadline_date', 'desc')->first();
+        $next = Deadline::where('deadline_date', '>', $current->deadline_date)->orderBy('deadline_date', 'asc')->first();
         return [
-            // DeleteAction::make()
-            //     ->visible(function ($record) {
-            //         // return Auth::user()->is_admin || Auth::user()->scopeTypes->where('id', $record->scope_type_id)->first()->pivot->permission === Permission::DELETE->value;
-            //         return Auth::user()->hasRole('super_admin') || Auth::user()->scopeTypes->where('id', $record->scope_type_id)->first()->pivot->permission === Permission::DELETE->value;
-            //     }),
-            Action::make('renew_deadline')
-                ->label('Rinnovo scadenza')
-                ->visible(fn () => ($currentDeadline->recurrent && $currentDeadline->met && !$currentDeadline->renew))
-                ->modalHeading('Rinnovo Scadenza')
-                ->modalWidth('xs')
-                ->form([
-                    DatePicker::make('new_deadline_date')
-                        ->label('Nuova data scadenza')
-                        ->extraInputAttributes(['class' => 'text-center'])
-                        ->required()
-                        ->default($defaultDate),
-                ])
-                ->action(function (array $data) use ($currentDeadline) {
-                    try {
-                        Deadline::create([
-                            'scope_type_id' => $currentDeadline->scope_type_id,
-                            'deadline_date' => $data['new_deadline_date'],
-                            'recurrent' => $currentDeadline->recurrent,
-                            'quantity' => $currentDeadline->quantity,
-                            'timespan' => $currentDeadline->timespan,
-                            'description' => $currentDeadline->description,
-                            'met' => false,
-                            'met_date' => null,
-                            'met_user_id' => null,
-                            'note' => $currentDeadline->note,
-                            'insert_user_id' => Auth::user()->id,
-                            'modify_user_id' => Auth::user()->id,
-                            'renew' => false,
-                        ]);
-
-                        $currentDeadline->update(['renew' => true]);
-
-                        Notification::make('success')
-                            ->title('Scadenza rinnovata con successo!')
-                            ->success()
-                            ->send();
-                    } catch (\Exception $e) {
-                        Notification::make('error')
-                            ->title('Errore durante il rinnovo della scadenza: ' . $e->getMessage())
-                            ->danger()
-                            ->send();
-                    }
+            // Scorrimento
+            Actions\Action::make('previous_doc')
+                ->label('Precedente')
+                ->color('info')
+                ->icon('heroicon-o-arrow-left-circle')
+                ->visible(function () use ($previous) { return $previous;})
+                ->action(function () use ($previous) {
+                    $this->redirect(DeadlineResource::getUrl('edit', ['record' => $previous->id]));
+                }),
+            Actions\Action::make('next_doc')
+                ->label('Successiva')
+                ->color('info')
+                ->icon('heroicon-o-arrow-right-circle')
+                ->visible(function () use ($next) { return $next;})
+                ->action(function () use ($next) {
+                    $this->redirect(DeadlineResource::getUrl('edit', ['record' => $next->id]));
                 }),
         ];
     }
 
-    // calcolo la data della nuova scadenza periodica
+    // Sovrascrivo il metodo di salvataggio
+    protected function handleRecordUpdate(\Illuminate\Database\Eloquent\Model $record, array $data): \Illuminate\Database\Eloquent\Model
+    {
+        // Salvo i dati del record
+        $record->update($data);
+
+        // Controllo se la scadenza è stata appena marcata come rispettata
+        // e se è ricorrente e non è già stata rinnovata
+        if ($data['met'] && $record->recurrent && !$record->renew) {
+            // Imposto un flag per far partire l'action dopo il salvataggio
+            $this->shouldShowRenewModal = true;
+        }
+
+        return $record;
+    }
+
+    protected function afterSave(): void
+    {
+        $this->refreshFormData(['updated_at', 'modify_user_id']);
+
+        // Se il flag è impostato, mostro la modale di rinnovo
+        if (property_exists($this, 'shouldShowRenewModal') && $this->shouldShowRenewModal) {
+            $this->shouldShowRenewModal = false;
+
+            // Trigger dell'action di rinnovo
+            $this->mountAction('renewDeadlineAfterSave');
+        }
+    }
+
+    // Action per il rinnovo dopo il salvataggio
+    public function renewDeadlineAfterSaveAction(): Action
+    {
+        $currentDeadline = $this->record;
+        $defaultDate = $this->calculateDefaultDate($currentDeadline);
+
+        return Action::make('renewDeadlineAfterSave')
+            ->requiresConfirmation()
+            ->modalHeading('Rinnovo Scadenza')
+            ->modalDescription('La scadenza è stata rispettata. Vuoi creare la nuova scadenza periodica?')
+            ->modalWidth('md')
+            ->modalSubmitActionLabel('Crea nuova scadenza')
+            ->modalCancelActionLabel('Annulla')
+            ->form([
+                DatePicker::make('new_deadline_date')
+                    ->label('Nuova scadenza proposta: ' . Carbon::parse($defaultDate)->format('d/m/Y'))
+                    ->extraInputAttributes(['class' => 'text-center'])
+                    ->required(),
+            ])
+            ->action(function (array $data) use ($currentDeadline, $defaultDate) {
+                if ($data['new_deadline_date'] !== $defaultDate) {
+                    // Se la data è diversa, invia una notifica di avviso
+                    $newDateFormatted = Carbon::parse($data['new_deadline_date'])->format('d/m/Y');
+                    $defaultDateFormatted = Carbon::parse($defaultDate)->format('d/m/Y');
+
+                    Notification::make('warning')
+                        ->title('Data Modificata Manualmente')
+                        ->body("Inserita la data {$newDateFormatted} invece<br> di quella proposta: {$defaultDateFormatted}")
+                        ->warning()
+                        ->persistent()
+                        ->send();
+                }
+                try {
+                    $new = Deadline::create([
+                        'prev_deadline_id' => $currentDeadline->id,
+                        'scope_type_id' => $currentDeadline->scope_type_id,
+                        'deadline_date' => $data['new_deadline_date'],
+                        'recurrent' => $currentDeadline->recurrent,
+                        'quantity' => $currentDeadline->quantity,
+                        'timespan' => $currentDeadline->timespan,
+                        'description' => $currentDeadline->description,
+                        'met' => false,
+                        'met_date' => null,
+                        'met_user_id' => null,
+                        'note' => $currentDeadline->note,
+                        'insert_user_id' => Auth::user()->id,
+                        'modify_user_id' => Auth::user()->id,
+                        'renew' => false,
+                    ]);
+
+                    $currentDeadline->update([
+                        'renew' => true
+                    ]);
+
+                    Notification::make('success')
+                        ->title('Scadenza rinnovata con successo!')
+                        ->success()
+                        ->send();
+
+                    // Opzionale: redirect alla lista
+                    $this->redirect(DeadlineResource::getUrl('view', ['record' => $new->id]));
+                } catch (\Exception $e) {
+                    Notification::make('error')
+                        ->title('Errore durante il rinnovo della scadenza: ' . $e->getMessage())
+                        ->danger()
+                        ->send();
+                }
+            });
+    }
+
+    // Calcolo la data della nuova scadenza periodica
     protected function calculateDefaultDate(Deadline $deadline): string
     {
         $date = Carbon::parse($deadline->deadline_date);
@@ -102,11 +173,6 @@ class EditDeadline extends EditRecord
         return $date->toDateString();
     }
 
-    protected function afterSave(): void
-    {
-        $this->refreshFormData(['updated_at', 'modify_user_id']);                   // ricarico i campi specificati
-    }
-
     protected function getFormActions(): array
     {
         return [
@@ -123,10 +189,14 @@ class EditDeadline extends EditRecord
     protected function getDeleteFormAction()
     {
         return DeleteAction::make()
-                ->visible(function ($record) {
-                    // return Auth::user()->is_admin || Auth::user()->scopeTypes->where('id', $record->scope_type_id)->first()->pivot->permission === Permission::DELETE->value;
-                    return Auth::user()->hasRole('super_admin') || Auth::user()->scopeTypes->where('id', $record->scope_type_id)->first()->pivot->permission === Permission::DELETE->value;
-                });
+            ->visible(function ($record) {
+                return Auth::user()->hasRole('super_admin') ||
+                       Auth::user()->scopeTypes
+                           ->where('id', $record->scope_type_id)
+                           ->first()
+                           ->pivot
+                           ->permission === Permission::DELETE->value;
+            });
     }
 
     protected function getCancelFormAction(): Actions\Action
