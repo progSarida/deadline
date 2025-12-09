@@ -23,8 +23,30 @@ class EditDeadline extends EditRecord
     protected function getHeaderActions(): array
     {
         $current = $this->record;
-        $previous = Deadline::where('deadline_date', '<', $current->deadline_date)->orderBy('deadline_date', 'desc')->first();
-        $next = Deadline::where('deadline_date', '>', $current->deadline_date)->orderBy('deadline_date', 'asc')->first();
+
+        // Applica lo scope di filtro (Deadline::userTypes())
+        $query = \App\Models\Deadline::userTypes();
+        // Precedente per deadline_date: data precedente O stessa data con ID minore
+        $previous = (clone $query)
+            ->where(function ($q) use ($current) {
+                $q->where('deadline_date', '<', $current->deadline_date) // Data precedente
+                  ->orWhere(function ($q2) use ($current) {
+                      $q2->where('deadline_date', $current->deadline_date) // Stessa data
+                         ->where('id', '<', $current->id);              // ID precedente
+                  });
+            })
+            ->orderBy('deadline_date', 'desc')->orderBy('id', 'desc')->first();
+        // Successivo per deadline_date: data successiva O stessa data con ID maggiore
+        $next = (clone $query)
+            ->where(function ($q) use ($current) {
+                $q->where('deadline_date', '>', $current->deadline_date) // Data successiva
+                  ->orWhere(function ($q2) use ($current) {
+                      $q2->where('deadline_date', $current->deadline_date) // Stessa data
+                         ->where('id', '>', $current->id);              // ID successivo
+                  });
+            })
+            ->orderBy('deadline_date', 'asc')->orderBy('id', 'asc')->first();
+
         return [
             // Scorrimento
             Actions\Action::make('previous_doc')

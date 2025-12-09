@@ -287,9 +287,9 @@ class DeadlineResource extends Resource
                                 // Mostra i record dove la data NON è scaduta.
                                 return $query->whereDate('deadline_date', '>=', now());
                         }
-
                         return $query;
-                    }),
+                    })
+                    ->default('not_met_late'),
                 Filter::make('deadline_period')
                     ->form([
                         DatePicker::make('deadline_from')
