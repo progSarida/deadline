@@ -265,16 +265,22 @@ class DeadlineResource extends Resource
                 //     }),
                 SelectFilter::make('stato_scadenza')
                     ->label('Stato Scadenza')
+                    ->placeholder('')
                     ->options([
-                        'respected'    => 'Rispettate (Sì)',
-                        'not_met_late' => 'Non Rispettate (No)',
-                        'in_progress'  => 'In Corso (Non Scadute)', // Nuova opzione
+                        'default'       => 'Non rispettate',
+                        'respected'     => 'Rispettate',
+                        'not_met_late'  => 'Scadute',
+                        'in_progress'   => 'In Corso',
+                        'all'   => 'Tutte',
                     ])
                     ->modifyQueryUsing(function (Builder $query, array $state): Builder {
                         if (!isset($state['value']) || $state['value'] === null || $state['value'] === '') {
                             return $query;
                         }
                         switch ($state['value']) {
+                            case 'default':
+                                // Mostra i record dove met è FALSE.
+                                return $query->where('met', false);
                             case 'respected':
                                 // Mostra solo i record dove met è TRUE.
                                 return $query->where('met', true);
@@ -286,10 +292,13 @@ class DeadlineResource extends Resource
                             case 'in_progress':
                                 // Mostra i record dove la data NON è scaduta.
                                 return $query->whereDate('deadline_date', '>=', now());
+                            case 'all':
+                                // Mostra tutti i record.
+                                return $query;
                         }
                         return $query;
                     })
-                    ->default('not_met_late'),
+                    ->default('default'),
                 Filter::make('deadline_period')
                     ->form([
                         DatePicker::make('deadline_from')
