@@ -160,8 +160,10 @@ class DeadlineResource extends Resource
                     })
                 ->sortable(),
                 TextColumn::make('timespan')->label('Periodicità')
+                    ->getStateUsing(fn ($record) => $record)
                     ->formatStateUsing(function ($record) {
-                        if (!$record->recurrent) {
+                        $isRecurrent = (bool) $record->recurrent;
+                        if (!$isRecurrent) {
                             return 'Non periodica';
                         }
                         if ($record->timespan && $record->quantity) {
