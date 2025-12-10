@@ -12,11 +12,17 @@ use Filament\Actions\DeleteAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Facades\Auth;
 
 class EditDeadline extends EditRecord
 {
     protected static string $resource = DeadlineResource::class;
+
+    public function getTitle(): string | Htmlable
+    {
+        return $this->record->description;
+    }
 
     public bool $shouldShowRenewModal = false;
 
