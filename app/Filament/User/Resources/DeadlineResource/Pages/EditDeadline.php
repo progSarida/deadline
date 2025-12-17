@@ -118,8 +118,10 @@ class EditDeadline extends EditRecord
             ->modalCancelActionLabel('Annulla')
             ->form([
                 DatePicker::make('new_deadline_date')
-                    ->label('Nuova scadenza proposta: ' . Carbon::parse($defaultDate)->format('d/m/Y'))
+                    // ->label('Nuova scadenza proposta: ' . Carbon::parse($defaultDate)->format('d/m/Y'))
+                    ->label('Nuova scadenza proposta:')
                     ->extraInputAttributes(['class' => 'text-center'])
+                    ->default($defaultDate)
                     ->required(),
             ])
             ->action(function (array $data) use ($currentDeadline, $defaultDate) {
