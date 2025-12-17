@@ -106,7 +106,7 @@ class DeadlineResource extends Resource
                         $set('met_user_id', Auth::user()->id);
                     })
                     ->columnSpan(['sm' => 'full', 'md' => 4]),
-                DatePicker::make('met_date')->label('Rispetatta il')
+                DatePicker::make('met_date')->label('Rispettata in data')
                     ->required()
                     ->extraInputAttributes(['class' => 'text-center'])
                     ->visible(fn (callable $get) => $get('met'))
