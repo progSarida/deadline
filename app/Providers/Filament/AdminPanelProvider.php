@@ -71,7 +71,7 @@ class AdminPanelProvider extends PanelProvider
                 Authenticate::class,
             ])
             ->renderHook(
-                PanelsRenderHook::TOPBAR_START,
+                PanelsRenderHook::TOPBAR_END,
                 fn (): string => view('filament.topbar.ticket-button')->render()
             )
             ->userMenuItems([
