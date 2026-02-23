@@ -15,6 +15,7 @@ use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Filament\View\PanelsRenderHook;
 use Filament\Widgets;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -69,11 +70,20 @@ class AdminPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
             ])
+            ->renderHook(
+                PanelsRenderHook::TOPBAR_START,
+                fn (): string => view('filament.topbar.ticket-button')->render()
+            )
             ->userMenuItems([
                 MenuItem::make()
                     ->label('Operatore')
                     ->url('/user')
                     ->icon('fas-user'),
+                MenuItem::make()
+                    ->label('Pannello Utente')
+                    ->url(config('services.sso.user_dashboard'))
+                    ->icon('heroicon-o-cog-6-tooth')
+                    ->openUrlInNewTab(),
                     'logout'=>MenuItem::make()
                     ->label('Vai al Portale')
                     ->icon('heroicon-o-arrow-left-start-on-rectangle'),
