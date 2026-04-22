@@ -180,7 +180,14 @@ class DeadlineResource extends Resource
                     }),
                 TextColumn::make('deadline_date')
                     ->label('Scadenza')
-                    ->date('d/m/Y'),
+                    ->formatStateUsing(function($record){
+                        $date = \Carbon\Carbon::parse($record->deadline_date);
+                        if ($record->deadline_time) {
+                            $time = \Carbon\Carbon::parse($record->deadline_time)->format('H:i');
+                            return "{$date->format('d/m/Y')} ({$time})";
+                        }
+                        return $date->format('d/m/Y');
+                    }),
                 TextColumn::make('created_at')
                     ->label('Inserita il')
                     ->date('d/m/Y')
