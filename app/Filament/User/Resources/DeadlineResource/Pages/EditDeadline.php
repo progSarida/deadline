@@ -10,6 +10,7 @@ use Filament\Actions;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\TimePicker;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Contracts\Support\Htmlable;
@@ -123,6 +124,10 @@ class EditDeadline extends EditRecord
                     ->extraInputAttributes(['class' => 'text-center'])
                     ->default($defaultDate)
                     ->required(),
+                TimePicker::make('new_deadline_time')
+                    ->label('Orario nuova scadenza')
+                    ->extraInputAttributes(['class' => 'text-center'])
+                    ->default('12:00:00'),
             ])
             ->action(function (array $data) use ($currentDeadline, $defaultDate) {
                 if ($data['new_deadline_date'] !== $defaultDate) {
@@ -142,6 +147,7 @@ class EditDeadline extends EditRecord
                         'prev_deadline_id' => $currentDeadline->id,
                         'scope_type_id' => $currentDeadline->scope_type_id,
                         'deadline_date' => $data['new_deadline_date'],
+                        'deadline_time' => $data['new_deadline_time'],
                         'recurrent' => $currentDeadline->recurrent,
                         'quantity' => $currentDeadline->quantity,
                         'timespan' => $currentDeadline->timespan,

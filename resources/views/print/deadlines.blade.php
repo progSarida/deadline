@@ -114,9 +114,10 @@
             <li>Periodicità: {{ collect($filters['timespan']['values'])->map(fn($v) => $v === 'null' ? 'Non periodica' : (\App\Enums\Timespan::tryFrom($v)?->getLabel() ?? $v))->implode(', ') }}</li>
         @endif
         @if(!empty($filters['stato_scadenza']['value'] ?? null))
-            <li>Stato scadenza: {{ ['respected'=>'Rispettate', 'not_met_late'=>'Non rispettate (scadute)', 'in_progress'=>'In corso'][$filters['stato_scadenza']['value']] }}</li>
+            {{-- <li>Stato scadenza: {{ ['respected'=>'Rispettate', 'not_met_late'=>'Non rispettate (scadute)', 'in_progress'=>'In corso'][$filters['stato_scadenza']['value']] }}</li> --}}
+            <li>Stato scadenza: {{ ['default'=>'Non rispettate', 'respected'=>'Rispettate', 'not_met_late'=>'Non rispettate (scadute)', 'in_progress'=>'In corso', 'all'=>'Tutte'][$filters['stato_scadenza']['value'] ?? ''] ?? 'Non specificato'}}</li>
         @endif
-        @if(!empty($filters['deadline_period']))
+        @if(!empty($filters['deadline_period']['deadline_from']) || !empty($filters['deadline_period']['deadline_to']))
             <li>Periodo scadenza:
                 @php
                     $from = $filters['deadline_period']['deadline_from'] ?? null;
@@ -147,11 +148,11 @@
             <tr>
                 <td><strong>{{ $deadline->scopeType?->name ?? 'N/D' }}</strong></td>
                 <td>
-                    {{ $deadline->deadline_date ? \Carbon\Carbon::parse($deadline->deadline_date)->format('d/m/Y') : 'N/D' }}
+                    {{ $deadline->deadline_date ? $deadline->deadline_date->format('d/m/Y') . ' ' . $deadline->deadline_time?->format('H:i') : 'N/D' }}
                     @php
                         $days = $deadline->deadline_date
                             ? now()->startOfDay()->diffInDays(
-                                \Carbon\Carbon::parse($deadline->deadline_date)->startOfDay(),
+                                $deadline->deadline_date->startOfDay(),
                                 false
                             )
                             : null;
@@ -170,7 +171,7 @@
                     @endif
                 </td>
                 <td>
-                    @if(!$deadline->deadline_date || (!$deadline->met && \Carbon\Carbon::parse($deadline->deadline_date)->isFuture()))
+                    @if(!$deadline->deadline_date || (!$deadline->met && $deadline->deadline_date->isFuture()))
                         -
                     @else
                         {{ $deadline->met ? 'Sì' : 'No' }}

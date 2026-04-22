@@ -12,6 +12,7 @@ class Deadline extends Model
         'prev_deadline_id',
         'scope_type_id',
         'deadline_date',
+        'deadline_time',
         'recurrent',
         'quantity',
         'timespan',
@@ -30,6 +31,8 @@ class Deadline extends Model
         'recurrent' => 'boolean',
         'met' => 'boolean',
         'renew' => 'boolean',
+        'deadline_date' => 'date',
+        'deadline_time' => 'datetime:H:i:s',
     ];
 
     public function insertUser()
@@ -84,11 +87,11 @@ class Deadline extends Model
 
         static::saving(function ($deadline) {
             $deadline->modify_user_id = Auth::user()->id;                           // salvo l'id dell'utente che per ultimo ha modificato la scadenza
-            if($deadline->met){                                                     // se la scadenza è segnata rispettata
-                $deadline->met_user_id = Auth::user()->id;                          // salvo l'id dell'utente che ha segnato rispettata la scadenza
-            } else {
-                $deadline->met_user_id = null;
-            }
+            // if($deadline->met){                                                     // se la scadenza è segnata rispettata
+            //     $deadline->met_user_id = Auth::user()->id;                          // salvo l'id dell'utente che ha segnato rispettata la scadenza
+            // } else {
+            //     $deadline->met_user_id = null;
+            // }
         });
 
         static::saved(function ($deadline) {

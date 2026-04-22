@@ -15,6 +15,7 @@ use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\TimePicker;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -73,8 +74,12 @@ class DeadlineResource extends Resource
                     ->required()
                     ->live()
                     ->columnSpan(['sm' => 'full', 'md' => 6]),
-                DatePicker::make('deadline_date')->label('Scadenza')
+                DatePicker::make('deadline_date')->label('Data scadenza')
                     ->required()
+                    ->extraInputAttributes(['class' => 'text-center'])
+                    ->columnSpan(['sm' => 'full', 'md' => 4]),
+                TimePicker::make('deadline_time')->label('Orario scadenza')
+                    ->default('12:00:00')
                     ->extraInputAttributes(['class' => 'text-center'])
                     ->columnSpan(['sm' => 'full', 'md' => 4]),
                 Toggle::make('recurrent')->label('Scadenza periodica')
