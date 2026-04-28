@@ -41,7 +41,7 @@ class DeadlineResource extends Resource
     public static function form(Form $form): Form
     {
         return $form
-            ->columns(24)
+            ->columns(48)
             // ->disabled(function ($record) use($form) {
             //     // if ($form->getOperation() === 'edit' && !Auth::user()->is_admin) {
             //     if ($form->getOperation() === 'edit' && !Auth::user()->hasRole('super_admin')) {
@@ -73,36 +73,36 @@ class DeadlineResource extends Resource
                     ->preload()
                     ->required()
                     ->live()
-                    ->columnSpan(['sm' => 'full', 'md' => 6]),
+                    ->columnSpan(['sm' => 'full', 'md' => 11]),
                 DatePicker::make('deadline_date')->label('Data scadenza')
                     ->required()
                     ->extraInputAttributes(['class' => 'text-center'])
-                    ->columnSpan(['sm' => 'full', 'md' => 4]),
+                    ->columnSpan(['sm' => 'full', 'md' => 7]),
                 TimePicker::make('deadline_time')->label('Orario scadenza')
                     ->default('12:00:00')
                     ->extraInputAttributes(['class' => 'text-center'])
-                    ->columnSpan(['sm' => 'full', 'md' => 4]),
+                    ->columnSpan(['sm' => 'full', 'md' => 7]),
                 Toggle::make('recurrent')->label('Scadenza periodica')
                     ->live()
-                    ->columnSpan(['sm' => 'full', 'md' => 5]),
+                    ->columnSpan(['sm' => 'full', 'md' => 9]),
+                TextInput::make('quantity')->label('Frequenza:')
+                    ->required()
+                    ->numeric()
+                    ->extraInputAttributes(['class' => 'text-right'])
+                    ->columnSpan(['sm' => 'full', 'md' => 5])
+                    ->visible(fn (callable $get) => $get('recurrent'))
+                    ->default(1),
                 Select::make('timespan')->label('Periodicità')
                     ->required()
                     ->live()
                     ->options(Timespan::class)
-                    ->columnSpan(['sm' => 'full', 'md' => 5])
+                    ->columnSpan(['sm' => 'full', 'md' => 9])
                     ->visible(fn (callable $get) => $get('recurrent')),
-                TextInput::make('quantity')->label('Frequenza ogni:')
-                    ->required()
-                    ->numeric()
-                    ->extraInputAttributes(['class' => 'text-right'])
-                    ->columnSpan(['sm' => 'full', 'md' => 3])
-                    ->visible(fn (callable $get) => $get('recurrent'))
-                    ->default(1),
                 TextInput::make('description')->label('Descrizione')
                     ->live()
                     ->columnSpan(['sm' => 'full', 'md' => 'full']),
                 Placeholder::make('')->visible(fn ($record) => !is_null($record))
-                    ->columnSpan(['sm' => 0, 'md' => 12]),
+                    ->columnSpan(['sm' => 0, 'md' => 24]),
                 Toggle::make('met')->label('Rispettata')
                     ->live()
                     ->visible(fn ($record) => !is_null($record))
@@ -110,17 +110,17 @@ class DeadlineResource extends Resource
                         $set('met_date', now()->toDateString());
                         $set('met_user_id', Auth::user()->id);
                     })
-                    ->columnSpan(['sm' => 'full', 'md' => 4]),
+                    ->columnSpan(['sm' => 'full', 'md' => 8]),
                 DatePicker::make('met_date')->label('Rispettata in data')
                     ->required()
                     ->extraInputAttributes(['class' => 'text-center'])
                     ->visible(fn (callable $get) => $get('met'))
-                    ->columnSpan(['sm' => 'full', 'md' => 4]),
+                    ->columnSpan(['sm' => 'full', 'md' => 8]),
                 Select::make('met_user_id')->label('Rispettata da')
                     ->required()
                     ->relationship(name: 'metUser', titleAttribute: 'name')
                     ->visible(fn (callable $get) => $get('met'))
-                    ->columnSpan(['sm' => 'full', 'md' => 4]),
+                    ->columnSpan(['sm' => 'full', 'md' => 8]),
                 Textarea::make('note')->label('Note')
                     ->rows(4)
                     ->columnSpan(['sm' => 'full', 'md' => 'full']),
@@ -128,23 +128,23 @@ class DeadlineResource extends Resource
                     ->disabled()
                     ->extraInputAttributes(['class' => 'text-center'])
                     ->visible(fn (callable $get) => $get('insert_user_id'))
-                    ->columnSpan(['sm' => 'full', 'md' => 4]),
+                    ->columnSpan(['sm' => 'full', 'md' => 8]),
                 Select::make('insert_user_id')->label('Inserito da')
                     ->required()
                     ->relationship(name: 'insertUser', titleAttribute: 'name')
                     ->disabled()
                     ->visible(fn ($state) => $state !== null)
-                    ->columnSpan(['sm' => 'full', 'md' => 4]),
+                    ->columnSpan(['sm' => 'full', 'md' => 8]),
                 DatePicker::make('updated_at')->label('Data modifica')
                     ->disabled()
                     ->extraInputAttributes(['class' => 'text-center'])
                     ->visible(fn (callable $get) => $get('modify_user_id'))
-                    ->columnSpan(['sm' => 'full', 'md' => 4]),
+                    ->columnSpan(['sm' => 'full', 'md' => 8]),
                 Select::make('modify_user_id')->label('Modificato da')
                     ->relationship(name: 'modifyUser', titleAttribute: 'name')
                     ->disabled()
                     ->visible(fn ($state) => $state !== null)
-                    ->columnSpan(['sm' => 'full', 'md' => 4]),
+                    ->columnSpan(['sm' => 'full', 'md' => 8]),
             ]);
     }
 
