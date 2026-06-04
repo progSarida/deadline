@@ -22,7 +22,8 @@ class EditDeadline extends EditRecord
 
     public function getTitle(): string | Htmlable
     {
-        return $this->record->description;
+        // return $this->record->description;
+        return str($this->record->description)->limit(60);
     }
 
     public bool $shouldShowRenewModal = false;

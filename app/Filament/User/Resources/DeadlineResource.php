@@ -79,7 +79,9 @@ class DeadlineResource extends Resource
                     ->extraInputAttributes(['class' => 'text-center'])
                     ->columnSpan(['sm' => 'full', 'md' => 7]),
                 TimePicker::make('deadline_time')->label('Orario scadenza')
-                    ->default('12:00:00')
+                    // ->default('12:00')
+                    ->format('H:i')
+                    ->seconds(false)
                     ->extraInputAttributes(['class' => 'text-center'])
                     ->columnSpan(['sm' => 'full', 'md' => 7]),
                 Toggle::make('recurrent')->label('Scadenza periodica')

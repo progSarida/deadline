@@ -14,7 +14,8 @@ class ViewDeadline extends ViewRecord
 
     public function getTitle(): string | Htmlable
     {
-        return $this->record->description;
+        // return $this->record->description;
+        return str($this->record->description)->limit(50);
     }
 
     protected function getHeaderActions(): array
