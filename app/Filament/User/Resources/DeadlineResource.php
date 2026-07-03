@@ -233,10 +233,31 @@ class DeadlineResource extends Resource
                     )
                     ->searchable()
                     ->multiple()->preload(),
+                SelectFilter::make('recurrent')
+                    ->label('Scadenze periodiche')
+                    ->placeholder('Includi')
+                    ->options([
+                        'Y'     => 'Seleziona',
+                        'N'     => 'Escludi'
+                    ])
+                    ->modifyQueryUsing(function (Builder $query, $state) {
+                        if (!isset($state['value']) || $state['value'] === null || $state['value'] === '') {
+                            return $query;
+                        }
+                        switch ($state['value']) {
+                            case 'Y':
+                                // Mostra solo i record dove recurrent è TRUE.
+                                return $query->where('recurrent', true);
+                            case 'N':
+                                // Mostra solo i record dove recurrent è FALSE.
+                                return $query->where('recurrent', false);
+                        }
+                        return $query;
+                    }),
                 SelectFilter::make('timespan')
                     ->label('Periodicità')
                     ->options(function () {
-                        $options = ['null' => 'Non periodica'];                                             // creo un array con l'opzione per "Non periodica" (timespan null)
+                        $options = [];                                                                      
 
                         foreach (Timespan::cases() as $case) {
                             $options[$case->value] = $case->getLabel();                                     // aggiungo le opzioni dell'enum Timespan
@@ -268,19 +289,6 @@ class DeadlineResource extends Resource
                     })
                     ->multiple()
                     ->preload(),
-                // SelectFilter::make('show_met')
-                //     ->label('Rispettate')
-                //     ->options([
-                //         '0' => 'Non rispettate',
-                //         '1' => 'Rispettate'
-                //     ])
-                //     ->modifyQueryUsing(function (Builder $query, $state) {
-                //         if ($state['value'] !== null && $state['value'] !== '') {
-                //             $query->where('met', (bool) $state['value']);
-                //         }
-
-                //         return $query;
-                //     }),
                 SelectFilter::make('stato_scadenza')
                     ->label('Stato Scadenza')
                     ->placeholder('')
@@ -289,7 +297,7 @@ class DeadlineResource extends Resource
                         'respected'     => 'Rispettate',
                         'not_met_late'  => 'Scadute',
                         'in_progress'   => 'In Corso',
-                        'all'   => 'Tutte',
+                        'all'           => 'Tutte',
                     ])
                     ->modifyQueryUsing(function (Builder $query, array $state): Builder {
                         if (!isset($state['value']) || $state['value'] === null || $state['value'] === '') {
