@@ -11,6 +11,7 @@ enum Timespan: string implements HasLabel
     case WEEK = "week";
     case MONTH = "month";
     case YEAR = "year";
+    case NONE = "none";
 
     public function getLabel(): string
     {
@@ -20,6 +21,7 @@ enum Timespan: string implements HasLabel
             self::WEEK => 'Settimana/e',
             self::MONTH => 'Mese/i',
             self::YEAR => 'Anno/i',
+            self::NONE => 'Indefinita',
         };
     }
 }

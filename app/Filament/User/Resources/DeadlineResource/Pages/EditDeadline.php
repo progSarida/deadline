@@ -185,7 +185,7 @@ class EditDeadline extends EditRecord
     }
 
     // Calcolo la data della nuova scadenza periodica
-    protected function calculateDefaultDate(Deadline $deadline): string
+    protected function calculateDefaultDate(Deadline $deadline): string|null
     {
         $date = Carbon::parse($deadline->deadline_date);
 
@@ -206,7 +206,7 @@ class EditDeadline extends EditRecord
                 $date->addYears($deadline->quantity);
                 break;
             default:
-                return now()->toDateString();
+                return null;
         }
 
         return $date->toDateString();
