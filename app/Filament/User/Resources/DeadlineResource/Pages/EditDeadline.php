@@ -127,8 +127,10 @@ class EditDeadline extends EditRecord
                     ->required(),
                 TimePicker::make('new_deadline_time')
                     ->label('Orario nuova scadenza')
+                    ->format('H:i')
+                    ->seconds(false)
                     ->extraInputAttributes(['class' => 'text-center'])
-                    ->default('12:00:00'),
+                    ->default(fn() => $currentDeadline->deadline_time),
             ])
             ->action(function (array $data) use ($currentDeadline, $defaultDate) {
                 if ($data['new_deadline_date'] !== $defaultDate) {
