@@ -158,7 +158,7 @@ class DeadlineResource extends Resource
             ->columns([
                 TextColumn::make('scopeType.name')->label('Ambito'),
                 TextColumn::make('description')
-                    ->label('Descrizione')
+                    ->label('🔍 Descrizione')
                     ->searchable()
                     ->limit(40)
                     ->tooltip(fn ($record) => $record->description),
@@ -196,7 +196,7 @@ class DeadlineResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('insertUser.name')
                     ->searchable()
-                    ->label('Inserita da')
+                    ->label('🔍 Inserita da')
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('updated_at')
                     ->label('Modificata il')
@@ -204,7 +204,7 @@ class DeadlineResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('modifyUser.name')
                     ->searchable()
-                    ->label('Modificata da')
+                    ->label('🔍 Modificata da')
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('met')
                     ->label('Rispettata')
@@ -221,7 +221,7 @@ class DeadlineResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('metUser.name')
                     ->searchable()
-                    ->label('Modificato da')
+                    ->label('🔍 Rispettata da')
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
