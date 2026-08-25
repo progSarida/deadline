@@ -55,6 +55,64 @@ class Deadline extends Model
         return $this->belongsTo(ScopeType::class, 'scope_type_id');
     }
 
+    // scadenza da cui è stata rinnovata questa scadenza
+    public function prevDeadline()
+    {
+        return $this->belongsTo(Deadline::class, 'prev_deadline_id');
+    }
+
+    // scadenze nate dal rinnovo di questa scadenza
+    public function nextDeadlines()
+    {
+        return $this->hasMany(Deadline::class, 'prev_deadline_id');
+    }
+
+    // true se questa scadenza è già stata rinnovata (esiste una scadenza che la indica come precedente)
+    public function hasNextDeadline(): bool
+    {
+        return $this->nextDeadlines()->exists();
+    }
+
+    /**
+     * Id di tutte le scadenze della serie periodica a cui appartiene questa scadenza
+     * (risale la catena dei prev_deadline_id fino alla prima e poi ridiscende i rinnovi).
+     *
+     * @return array<int>
+     */
+    public function seriesIds(): array
+    {
+        // risalgo la catena fino alla prima scadenza della serie
+        $root = $this;
+        $walked = [$root->id => true];
+
+        while ($root->prev_deadline_id && !isset($walked[$root->prev_deadline_id])) {
+            $prev = static::find($root->prev_deadline_id);
+            if (!$prev) {
+                break;
+            }
+            $walked[$prev->id] = true;
+            $root = $prev;
+        }
+
+        // ridiscendo la catena dei rinnovi partendo dalla prima scadenza
+        $ids = [$root->id];
+        $level = [$root->id];
+
+        while ($level) {
+            $children = static::whereIn('prev_deadline_id', $level)->pluck('id')->all();
+            $children = array_values(array_diff($children, $ids));                      // evito loop su catene incoerenti
+
+            if (!$children) {
+                break;
+            }
+
+            $ids = array_merge($ids, $children);
+            $level = $children;
+        }
+
+        return $ids;
+    }
+
     // query per filtro ambiti assegnati
     public function scopeUserTypes($query)
     {
@@ -99,6 +157,10 @@ class Deadline extends Model
         });
 
         static::deleting(function ($deadline) {
+            if ($deadline->hasNextDeadline()) {
+                return false;                                                       // blocco l'eliminazione: la scadenza è già stata rinnovata (ultima difesa, l'interfaccia lo impedisce prima)
+            }
+
             $prev = Deadline::find($deadline->prev_deadline_id);
             if ($prev) {
                 $prev->renew = false;

@@ -6,18 +6,22 @@ use App\Enums\Permission;
 use App\Enums\Timespan;
 use App\Filament\User\Resources\DeadlineResource\Pages;
 use App\Filament\User\Resources\DeadlineResource\RelationManagers;
+use App\Filament\User\Resources\DeadlineResource\RelationManagers\LinkedDeadlinesRelationManager;
 use App\Models\Deadline;
 use App\Models\ScopeType;
 use Filament\Forms;
 use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Livewire;
 use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\TimePicker;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
@@ -27,6 +31,7 @@ use Filament\Tables\Filters\Indicator;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\Auth;
 
@@ -126,6 +131,27 @@ class DeadlineResource extends Resource
                 Textarea::make('note')->label('Note')
                     ->rows(4)
                     ->columnSpan(['sm' => 'full', 'md' => 'full']),
+
+                // scadenze della stessa serie periodica: il relation manager è renderizzato qui dentro come componente Livewire
+                Section::make('Scadenze collegate')
+                    ->id('linked-deadlines')                                                     // id stabile: serve a persistCollapsed() per ricordare aperta/chiusa
+                    ->collapsible()
+                    ->collapsed()
+                    // ->persistCollapsed()
+                    ->visible(fn (?Deadline $record) => $record !== null && $record->recurrent)  // solo su scadenze periodiche già salvate
+                    ->columnSpanFull()
+                    ->schema([
+                        Livewire::make(
+                            LinkedDeadlinesRelationManager::class,
+                            fn (?Deadline $record, $livewire) => [
+                                'ownerRecord' => $record,
+                                'pageClass'   => $livewire::class,
+                            ],
+                        )
+                            ->key('rm-linked-deadlines')
+                            ->columnSpanFull(),
+                    ]),
+
                 DatePicker::make('created_at')->label('Data inserimento')
                     ->disabled()
                     ->extraInputAttributes(['class' => 'text-center'])
@@ -378,19 +404,85 @@ class DeadlineResource extends Resource
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 // Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\DeleteAction::make()
+                    // scadenza già rinnovata: spiego il motivo nella modale e tolgo il pulsante di conferma
+                    ->modalDescription(fn (Deadline $record) => static::getDeleteBlockedMessage($record))
+                    ->modalSubmitAction(fn (Deadline $record) => static::getDeleteBlockedMessage($record) ? false : null)
+                    ->before(function (Tables\Actions\DeleteAction $action, Deadline $record) {
+                        if ($message = static::getDeleteBlockedMessage($record)) {
+                            Notification::make()
+                                ->title('Eliminazione non consentita')
+                                ->body($message)
+                                ->danger()
+                                ->persistent()
+                                ->send();
+
+                            $action->cancel();
+                        }
+                    }),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->modalDescription(fn (Collection $records) => static::getBulkDeleteBlockedMessage($records))
+                        ->modalSubmitAction(fn (Collection $records) => static::getBulkDeleteBlockedMessage($records) ? false : null)
+                        ->before(function (Tables\Actions\DeleteBulkAction $action, Collection $records) {
+                            if ($message = static::getBulkDeleteBlockedMessage($records)) {
+                                Notification::make()
+                                    ->title('Eliminazione non consentita')
+                                    ->body($message)
+                                    ->danger()
+                                    ->persistent()
+                                    ->send();
+
+                                $action->cancel();
+                            }
+                        }),
                 ]),
             ]);
+    }
+
+    /**
+     * Motivo per cui la scadenza non può essere eliminata (null se è eliminabile):
+     * una scadenza già rinnovata non può essere cancellata senza spezzare la catena dei rinnovi.
+     */
+    public static function getDeleteBlockedMessage(Deadline $record): ?string
+    {
+        $next = $record->nextDeadlines()->orderBy('deadline_date')->first();
+
+        if (!$next) {
+            return null;
+        }
+
+        return 'Questa scadenza è già stata rinnovata nella scadenza del '
+            . \Carbon\Carbon::parse($next->deadline_date)->format('d/m/Y')
+            . '. Per eliminarla devi prima eliminare la scadenza successiva.';
+    }
+
+    // stesso controllo per l'eliminazione multipla: blocco l'intera selezione se contiene scadenze già rinnovate
+    public static function getBulkDeleteBlockedMessage(Collection $records): ?string
+    {
+        $blocked = $records->filter(fn (Deadline $record) => $record->hasNextDeadline());
+
+        if ($blocked->isEmpty()) {
+            return null;
+        }
+
+        $dates = $blocked
+            ->map(fn (Deadline $record) => \Carbon\Carbon::parse($record->deadline_date)->format('d/m/Y'))
+            ->implode(', ');
+
+        return $blocked->count() === 1
+            ? "La scadenza selezionata del {$dates} è già stata rinnovata: deselezionala per procedere con le altre."
+            : "Le scadenze selezionate del {$dates} sono già state rinnovate: deselezionale per procedere con le altre.";
     }
 
     public static function getRelations(): array
     {
         return [
-            //
+            // serve a registrarlo come componente Livewire: viene renderizzato nel form (Section "Scadenze collegate"),
+            // non in automatico in fondo alla pagina, perché canViewForRecord() ritorna false
+            RelationManagers\LinkedDeadlinesRelationManager::class,
         ];
     }
 

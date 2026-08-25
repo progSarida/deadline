@@ -228,6 +228,21 @@ class EditDeadline extends EditRecord
     protected function getDeleteFormAction()
     {
         return DeleteAction::make()
+            // scadenza già rinnovata: spiego il motivo nella modale e tolgo il pulsante di conferma
+            ->modalDescription(fn (Deadline $record) => DeadlineResource::getDeleteBlockedMessage($record))
+            ->modalSubmitAction(fn (Deadline $record) => DeadlineResource::getDeleteBlockedMessage($record) ? false : null)
+            ->before(function (DeleteAction $action, Deadline $record) {
+                if ($message = DeadlineResource::getDeleteBlockedMessage($record)) {
+                    Notification::make()
+                        ->title('Eliminazione non consentita')
+                        ->body($message)
+                        ->danger()
+                        ->persistent()
+                        ->send();
+
+                    $action->cancel();
+                }
+            })
             ->visible(function ($record) {
                 return Auth::user()->hasRole('super_admin') ||
                        Auth::user()->scopeTypes
